@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import KFold
 from preprocess import process_data
 from mlp import MLP
+import wandb
 
 def train(model, dataloader, criterion, optimizer):
     model.train()
@@ -20,7 +21,7 @@ def train(model, dataloader, criterion, optimizer):
 
 if __name__ == "__main__":
     # Initialize GPU usage
-    gpu_number = "1"
+    gpu_number = None
     if gpu_number:
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = gpu_number
@@ -63,6 +64,11 @@ if __name__ == "__main__":
     fold = 1
     kfold_scores = []
 
+    # Initialize WandB
+    wandb.init(project="SteelyDANN", entity="naddeok")
+
+    num_epochs = 10  # Number of training epochs
+
     for train_index, test_index in kf.split(X):
         print(f"Fold: {fold}")
         fold += 1
@@ -81,19 +87,40 @@ if __name__ == "__main__":
         train_dataset = TensorDataset(X_train, y_train)
         train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
-        # Train the model and print training loss
-        train_loss = train(model, train_dataloader, criterion, optimizer)
-        print(f"Training Loss: {train_loss}")
+        for epoch in range(num_epochs):
+            print(f"Epoch: {epoch + 1}")
+            
+            # Training phase
+            model.train()
+            running_loss = 0.0
+            for inputs, targets in train_dataloader:
+                optimizer.zero_grad()
+                outputs = model(inputs)
+                loss = criterion(outputs, targets)
+                loss.backward()
+                optimizer.step()
+                running_loss += loss.item() * inputs.size(0)
 
-        # Evaluate the model
-        model.eval()
-        with torch.no_grad():
-            test_outputs = model(X_test)
-            test_loss = torch.sqrt(criterion(test_outputs, y_test))  # Calculate RMSE
-            print(f"Test Loss (RMSE): {test_loss.item()}")
+            train_loss = running_loss / len(train_dataset)
+            print(f"Training Loss: {train_loss}")
+
+            # Log the training loss to WandB
+            wandb.log({"Training Loss": train_loss})
+
+            # Validation phase
+            model.eval()
+            with torch.no_grad():
+                test_outputs = model(X_test)
+                test_loss = torch.sqrt(criterion(test_outputs, y_test))  # Calculate RMSE
+                print(f"Test Loss (RMSE): {test_loss.item()}")
+
+            # Log the test loss to WandB
+            wandb.log({"Test Loss (RMSE)": test_loss.item()})
 
         # Store the k-fold score (RMSE)
         kfold_scores.append(test_loss.item())
+
+    wandb.finish()
 
     # Train the model on all data
     X_all = torch.from_numpy(X).float().to(device)
