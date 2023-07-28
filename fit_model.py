@@ -12,8 +12,10 @@ def load_data(filepath):
     y = df.iloc[:, -1].values
     return X, y
 
-def train_model(model, dataloader, epochs, criterion, optimizer):
+def train_model(model, train_data, epochs, criterion, optimizer):
     model.train()
+    dataloader = DataLoader(train_data, batch_size=64)
+    
     for epoch in range(epochs):
         for batch, (X, y) in enumerate(dataloader):
             X, y = X.to(device), y.unsqueeze(-1).to(device)
@@ -39,7 +41,7 @@ def test_model(model, criterion, dataloader):
     print(f'Avg Test Loss: {avg_test_loss}')
     return total_loss / len(dataloader)
 
-def k_fold_validation(model, X, y, epochs, criterion, optimizer, k=5):
+def k_fold_validation(base_model, X, y, epochs, criterion, optimizer, k=5):
     kf = KFold(n_splits=k, shuffle=True)
     losses = []
     for train_index, test_index in kf.split(X):
@@ -49,14 +51,16 @@ def k_fold_validation(model, X, y, epochs, criterion, optimizer, k=5):
         train_data = TensorDataset(torch.tensor(X_train, dtype=torch.float32), torch.tensor(y_train, dtype=torch.float32))
         test_data = TensorDataset(torch.tensor(X_test, dtype=torch.float32), torch.tensor(y_test, dtype=torch.float32))
 
-        train_dataloader = DataLoader(train_data, batch_size=64)
+        
         test_dataloader = DataLoader(test_data, batch_size=64)
 
-        model = model.to(device)
+        model = type(base_model)(hidden_size=base_model.layers[2].in_features).to(device)  # create a new instance of the same model
+        model.load_state_dict(base_model.state_dict())
+        
         criterion = nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-        train_model(model, train_dataloader, epochs, criterion, optimizer)
+        train_model(model, train_data, epochs, criterion, optimizer)
         loss = test_model(model, criterion, test_dataloader)
         losses.append(loss)
 
@@ -70,8 +74,8 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # Hypers
-    epochs = 50
-    hidden_layer = 8
+    epochs = 5000
+    hidden_layer = 16
     
     # Instantiate the model
     model = MLP(hidden_size=hidden_layer).to(device)
@@ -92,4 +96,4 @@ if __name__ == "__main__":
     print("Average Loss from K-Fold Cross Validation:", avg_loss)
 
     # Save model with kfold score in filename
-    torch.save(model.state_dict(), f'models/model_{hidden_layer:.2f}_hidden_layers_kfold_loss_{avg_loss:.2f}.pt')
+    torch.save(model.state_dict(), f"models/model_{hidden_layer:.0f}_hidden_layers_kfold_loss_{avg_loss:.4f}".replace('.', '_') + ".pt")
