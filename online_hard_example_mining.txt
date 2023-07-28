@@ -1,0 +1,15 @@
+Hard example mining is a strategy used in the training of machine learning models, particularly in the context of object detection tasks. The basic idea is to focus on a subset of the training data where the model performs poorly, i.e., the "hard examples". By doing so, the model can learn more effectively as it is forced to improve on its weaknesses.
+
+The math behind hard example mining is tied to the concept of loss functions in machine learning. A loss function quantifies how well the prediction of a model on a single example matches the actual label of that example. In hard example mining, the focus is on examples where the loss is high, indicating that the model's predictions are far from the actual labels.
+
+One common method of hard example mining is Online Hard Example Mining (OHEM). In OHEM, for each image in the training set, the model first makes predictions for all possible object locations (usually in the form of bounding boxes). The loss is then calculated for each predicted bounding box. The model is then updated based on a subset of these bounding boxes - the ones for which the loss was highest, i.e., the hard examples.
+
+The original paper that introduced the concept of hard example mining is "Training cascade object detectors with online hard example mining" by Srivastava et al., published in 2016. I can find the paper for you using the arXiv paper database plugin.
+
+Let me do that for you.
+
+The original paper that introduced the concept of hard example mining is "Training Region-based Object Detectors with Online Hard Example Mining" by Abhinav Shrivastava, Abhinav Gupta, and Ross Girshick. It was published in 2016 and appeared in the Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR).
+
+The paper presents a simple yet effective online hard example mining (OHEM) algorithm for training region-based ConvNet detectors. The motivation behind this work is that detection datasets contain an overwhelming number of easy examples and a small number of hard examples. Automatic selection of these hard examples can make training more effective and efficient. OHEM is a simple and intuitive algorithm that eliminates several heuristics and hyperparameters in common use. It yields consistent and significant boosts in detection performance on benchmarks like PASCAL VOC 2007 and 2012. Its effectiveness increases as datasets become larger and more difficult, as demonstrated by the results on the MS COCO dataset.
+
+You can access the full paper [here](http://arxiv.org/pdf/1604.03540v1.pdf).
