@@ -41,9 +41,10 @@ class LeitnerOHEM:
         self.assign_to_piles(losses)
 
         # Calculate the standard deviation of the losses
+        losses_mean = np.mean(losses)
         losses_std = np.std(losses)
 
-        return losses_std
+        return losses_mean, losses_std
 
     def calculate_losses(self, indices):
         losses = []
