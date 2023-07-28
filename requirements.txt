@@ -33,3 +33,4 @@ torchsummary==1.5.1
 triton==2.0.0
 typing-extensions==4.7.1
 tzdata==2023.3
+xlrd==2.0.1
