@@ -7,7 +7,7 @@ from mlp import MLP
 
 # Load the standardized data
 def load_standardized_data(filename):
-    data = pd.read_excel(filename, index_col=0)
+    data = pd.read_excel(filename)
     return torch.tensor(data.values).float()
 
 def load_standardization_values(filename):
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     model = MLP()
 
     # Load the trained model state dict
-    model_state_dict = torch.load("models/trained_model.pt", map_location=torch.device('cpu'))
+    model_state_dict = torch.load("model_kfold_loss_0.06.pt", map_location=torch.device('cpu'))
     model.load_state_dict(model_state_dict)
 
     # Set the device for prediction (CPU or GPU)
