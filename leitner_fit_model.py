@@ -14,48 +14,79 @@ def load_data(filepath):
     y = df.iloc[:, -1].values
     return X, y
 
-def train_model(model, train_data, criterion, optimizer):
+def leitner_train_model(model, train_data, max_updates, criterion, optimizer, device, fold=None):
     model.train()
     dataloader = DataLoader(train_data, batch_size=64)
     
-    ohem = LeitnerOHEM(model, criterion, dataloader, model.device)
+    ohem = LeitnerOHEM(model, criterion, dataloader, device)
+    loss_std_threshold = 0.01
     
-    for epoch in range(epochs):
-        update_count = 0
-        max_updates = 10
+    
+    update_count = 0
 
-        while update_count < max_updates:
-            ohem.update_piles()
-            max_pile_3 = max(ohem.calculate_losses(ohem.piles[3]))
+    while update_count < max_updates:
+        std_all_losses = ohem.update_piles(dataloader)
+        print("The std for all losses is: ", std_all_losses)
 
-            for pile in [2, 1]:  # start with pile 2
-                inner_update_count = 0
-                while len(ohem.piles[pile]) > 0 and inner_update_count < max_updates:
-                    indices = ohem.piles[pile]
-                    np.random.shuffle(indices)
+        # Check if std_all_losses is under the threshold
+        if std_all_losses < loss_std_threshold:
+            break
 
-                    # Train on the whole batch
-                    X, y = train_data[indices]
-                    X, y = X.to(device), y.unsqueeze(-1).to(device)
-                    optimizer.zero_grad()
-                    output = model(X)
-                    loss = criterion(output, y)
-                    loss.backward()
-                    optimizer.step()
+        max_pile_3 = max(ohem.calculate_losses(ohem.piles[3]))
+        for pile in [2, 1]:  # start with pile 2
+            inner_update_count = 0
+            pile_size = len(ohem.piles[pile])
+            while pile_size > 0 and inner_update_count < max_updates:
+                indices = ohem.piles[pile]
+                np.random.shuffle(indices)
 
-                    # Remove examples based on individual losses
-                    with torch.no_grad():
-                        losses = criterion(model(X), y).detach().cpu().numpy()
-                    indices_to_remove = [idx for idx, loss in zip(indices, losses) if loss <= max_pile_3]
-                    for idx in indices_to_remove:
-                        ohem.piles[pile].remove(idx)
+                # Train on the whole batch
+                X, y = train_data[indices]
+                X, y = X.to(device), y.unsqueeze(-1).to(device)
+                optimizer.zero_grad()
+                output = model(X)
+                loss = criterion(output, y)
+                loss.backward()
+                optimizer.step()
 
-                    print(f'Update {inner_update_count+1} in pile {pile}. Number of data points in pile: {len(ohem.piles[pile])}')
-                    inner_update_count += 1
+                # Calculate individual losses
+                with torch.no_grad():
+                    individual_losses = []
+                    for idx in indices:
+                        X_single, y_single = train_data[idx]
+                        X_single, y_single = X_single.to(device).unsqueeze(0), y_single.to(device).unsqueeze(0).unsqueeze(-1)
+                        output_single = model(X_single)
+                        loss_single = criterion(output_single, y_single)
+                        individual_losses.append(loss_single.item())
+                indices_to_remove = [idx for idx, loss in zip(indices, individual_losses) if loss <= max_pile_3]
 
-            update_count += 1
+                prev_pile_size = pile_size
+                for idx in indices_to_remove:
+                    ohem.piles[pile].remove(idx)
+                pile_size = len(ohem.piles[pile])
+                
+                if prev_pile_size != pile_size:
+                    if fold is None:
+                        print(f'Final Train. Pile Update {inner_update_count+1} in pile {pile}. Number of data points in pile: {pile_size}. Maximum loss in current pile: {max(individual_losses)}. Max loss in pile 3: {max_pile_3}')
+                    else:
+                        print(f'Fold: {fold}. Pile Update {inner_update_count+1} in pile {pile}. Number of data points in pile: {pile_size}. Maximum loss in current pile: {max(individual_losses)}. Max loss in pile 3: {max_pile_3}')
+                inner_update_count += 1
 
-        print(f'Epoch {epoch+1}/{epochs}, Loss: {loss.item()}')
+        # Take a gradient step on the whole dataset
+        for batch, (X, y) in enumerate(dataloader):
+            X, y = X.to(device), y.unsqueeze(-1).to(device)
+            optimizer.zero_grad()
+            output = model(X)
+            loss = criterion(output, y)
+            loss.backward()
+            optimizer.step()
+
+        update_count += 1
+
+
+        print(f'Update {update_count+1}/{max_updates}, Loss: {loss.item()}')
+
+    return model
 
 
 def test_model(model, criterion, dataloader):
@@ -73,10 +104,10 @@ def test_model(model, criterion, dataloader):
     print(f'Avg Test Loss: {avg_test_loss}')
     return total_loss / len(dataloader)
 
-def k_fold_validation(base_model, X, y, epochs, criterion, optimizer, k=5):
+def k_fold_validation(base_model, X, y, max_updates, criterion, optimizer, device, k=5):
     kf = KFold(n_splits=k, shuffle=True)
     losses = []
-    for train_index, test_index in kf.split(X):
+    for fold, (train_index, test_index) in enumerate(kf.split(X)):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
         
@@ -91,8 +122,8 @@ def k_fold_validation(base_model, X, y, epochs, criterion, optimizer, k=5):
         criterion = nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-        train_model(model, train_data, epochs, criterion, optimizer)
-        loss = test_model(model, criterion, test_dataloader)
+        leitner_model = leitner_train_model(model, train_data, max_updates, criterion, optimizer, device, fold)
+        loss = test_model(leitner_model, criterion, test_dataloader)
         losses.append(loss)
 
     return sum(losses) / len(losses)
@@ -105,7 +136,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # Hypers
-    epochs = 5000
+    max_updates = 5000
     hidden_layer = 16
     
     # Instantiate the model
@@ -117,14 +148,13 @@ if __name__ == "__main__":
     X, y = load_data('data/stainless_steel_304_standardized.xlsx')
 
     # K Fold cross validation
-    avg_loss = k_fold_validation(model, X, y, epochs, criterion, optimizer)
+    avg_loss = k_fold_validation(model, X, y, max_updates, criterion, optimizer, device)
 
     # Train on full data
     full_data = TensorDataset(torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=torch.float32))
-    full_dataloader = DataLoader(full_data, batch_size=64)
 
-    train_model(model, full_dataloader, epochs, criterion, optimizer)
+    leitner_model = leitner_train_model(model, full_data, max_updates, criterion, optimizer, device)
     print("Average Loss from K-Fold Cross Validation:", avg_loss)
 
     # Save model with kfold score in filename
-    torch.save(model.state_dict(), f"models/model_{hidden_layer:.0f}_hidden_layers_kfold_loss_{avg_loss:.4f}".replace('.', '_') + ".pt")
+    torch.save(leitner_model.state_dict(), f"models/leitner_model_{hidden_layer:.0f}_hidden_layers_kfold_loss_{avg_loss:.4f}".replace('.', '_') + ".pt")
