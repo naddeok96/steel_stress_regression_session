@@ -69,11 +69,12 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu_number
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    # Instantiate the model
-    model = MLP().to(device)
-    
     # Hypers
     epochs = 50
+    hidden_layer = 8
+    
+    # Instantiate the model
+    model = MLP(hidden_size=hidden_layer).to(device)
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
@@ -91,4 +92,4 @@ if __name__ == "__main__":
     print("Average Loss from K-Fold Cross Validation:", avg_loss)
 
     # Save model with kfold score in filename
-    torch.save(model.state_dict(), f'model_kfold_loss_{avg_loss:.2f}.pt')
+    torch.save(model.state_dict(), f'models/model_{hidden_layer:.2f}_hidden_layers_kfold_loss_{avg_loss:.2f}.pt')

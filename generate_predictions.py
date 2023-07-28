@@ -29,6 +29,8 @@ def unstandardize_predictions(predictions, mean_values, std_values):
 
 if __name__ == "__main__":
     # Set the path to your data files
+    model_name = "models/model_8.00_hidden_layers_kfold_loss_0.16.pt"
+    hidden_size=8
     data_file = "data/stainless_steel_304.xlsx"
     standardized_data_file = "data/stainless_steel_304_standardized.xlsx"
     standardization_values_file = "data/stainless_steel_304_standardization_values.xlsx"
@@ -40,10 +42,10 @@ if __name__ == "__main__":
     mean_values, std_values = load_standardization_values(standardization_values_file)
     
     # Load the neural network model
-    model = MLP()
+    model = MLP(hidden_size=hidden_size)
 
     # Load the trained model state dict
-    model_state_dict = torch.load("model_kfold_loss_0.06.pt", map_location=torch.device('cpu'))
+    model_state_dict = torch.load(model_name, map_location=torch.device('cpu'))
     model.load_state_dict(model_state_dict)
 
     # Set the device for prediction (CPU or GPU)
