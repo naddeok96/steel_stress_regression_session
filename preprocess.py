@@ -36,9 +36,9 @@ def standardize_data(data, mean_values, std_values):
     return standardized_data
 
 def save_data(data, filename, headers):
-    # save as xlsx in same folder
-    pd.DataFrame(data.numpy(), columns=headers).to_excel(filename)
-            
+    # save as xlsx in the same folder
+    pd.DataFrame(data.numpy(), columns=headers).to_excel(filename, index=False)
+
 def analyze_input_space(data, output_file_prefix, headers):
     # Function to perform k-means clustering for each column/variable and save the results
 
@@ -46,19 +46,24 @@ def analyze_input_space(data, output_file_prefix, headers):
         cluster_info = []
         for cluster_id in range(clusters):
             cluster_data = data[cluster_labels == cluster_id]
-            cluster_mean = torch.mean(cluster_data, dim=0)
-            cluster_std = torch.std(cluster_data, dim=0)
+            cluster_mean = torch.mean(cluster_data).item()
+            cluster_std = torch.std(cluster_data).item()
             num_data_points = cluster_data.shape[0]
-            cluster_info.append((num_data_points, cluster_mean.numpy()[0], cluster_std.numpy()[0]))
+            cluster_info.append({'Variable': headers[col_idx],
+                                 'Number of Data Points': num_data_points,
+                                 'Mean': cluster_mean,
+                                 'Std': cluster_std})
         return cluster_info
 
     num_variables = data.shape[1] - 1  # Last column is the target variable
 
-    # Create an empty DataFrame to hold the cluster information
-    df_clusters = pd.DataFrame(columns=['Variable', 'Number of Data Points', 'Mean', 'Std'],
-                               dtype='object')
+    # Create a list to hold the cluster information
+    cluster_info_list = []
 
-    with pd.ExcelWriter(output_file_prefix) as writer:
+    with pd.ExcelWriter(output_file_prefix, engine='openpyxl') as writer:
+        # Create a blank sheet named "Sheet1" before writing the actual data
+        writer.book.create_sheet('Sheet1')
+
         for col_idx in range(num_variables):
             variable_data = data[:, col_idx]
             X = variable_data.unsqueeze(1)  # Convert to 2D tensor for clustering
@@ -67,7 +72,7 @@ def analyze_input_space(data, output_file_prefix, headers):
             best_score, best_clusters = -1, 0
             max_clusters = min(10, X.shape[0] - 1)  # Maximum number of clusters is n-1
             for clusters in range(2, max_clusters + 1):
-                kmeans = KMeans(n_clusters=clusters, random_state=42)
+                kmeans = KMeans(n_clusters=clusters, n_init=n_init_value, random_state=42)
                 cluster_labels = kmeans.fit_predict(X)
                 silhouette_avg = silhouette_score(X, cluster_labels)
                 if silhouette_avg > best_score:
@@ -75,35 +80,30 @@ def analyze_input_space(data, output_file_prefix, headers):
                     best_clusters = clusters
 
             # Perform k-means clustering with the best number of clusters
-            kmeans = KMeans(n_clusters=best_clusters, random_state=42)
+            kmeans = KMeans(n_clusters=best_clusters, n_init=n_init_value, random_state=42)
             cluster_labels = kmeans.fit_predict(X)
 
-            # Save cluster information to the DataFrame
-            cluster_info = calculate_cluster_info(best_clusters, X)
-
-            # Sort the cluster_info based on the mean value
-            cluster_info.sort(key=lambda x: x[1])
-
-            for info in cluster_info:
-                df_clusters = df_clusters.append({'Variable': headers[col_idx],
-                                                  'Number of Data Points': info[0],
-                                                  'Mean': info[1],
-                                                  'Std': info[2]}, ignore_index=True)
+            # Save cluster information to the list
+            cluster_info_list.extend(calculate_cluster_info(best_clusters, X))
 
             # Add a blank row between unique variables
-            if col_idx < num_variables - 1:
-                df_clusters = df_clusters.append({col: '' for col in df_clusters.columns}, ignore_index=True)
+            cluster_info_list.append({})  # Empty dictionary to represent the blank row
+
+        # Create the DataFrame from the cluster_info_list
+        df_clusters_final = pd.DataFrame(cluster_info_list)
 
         # Save the cluster information to a sheet named "Cluster Information"
-        df_clusters.to_excel(writer, sheet_name='Cluster Information', index=False)
-        
+        df_clusters_final.to_excel(writer, sheet_name='Cluster Information', index=False)
+
 def process_data(filename, standardization_values=None):
+    # Ensure filename slashes are in the proper format
     filename = filename.replace('\\', '/')
-    
+
+    # Open, clean, and save cleaned data
     df = open_data(filename)
     tensor_data = clean_data(df)
     save_data(tensor_data, filename.replace('.xlsx', '_cleaned.xlsx'), df.columns)
-    
+
     # Perform k-means clustering and save the results
     cluster_output_file = filename.replace('.xlsx', '_clusters.xlsx')
     analyze_input_space(tensor_data, cluster_output_file, df.columns)
@@ -118,6 +118,7 @@ def process_data(filename, standardization_values=None):
 
     return standardized_data
 
-if "__main__" == __name__:
-    process_data("data\stainless_steel_304.xlsx", standardization_values=None)
+if __name__ == "__main__":
+    n_init_value = 10  # Set the n_init value explicitly
 
+    process_data("data/stainless_steel_304.xlsx", standardization_values=None)
