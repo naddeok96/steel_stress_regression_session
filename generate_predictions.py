@@ -1,6 +1,7 @@
 import pandas as pd
 import torch
 import torch.nn as nn
+import numpy as np
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import mean_squared_error
 from mlp import MLP
@@ -30,8 +31,8 @@ def unstandardize_predictions(predictions, mean_values, std_values):
 
 if __name__ == "__main__":
     # Set the path to your data files
-    model_name = "models/leitner_model_16_hidden_layers_kfold_loss_0_0064.pt"
-    hidden_size=16
+    model_name = "models/model_8.00_hidden_layers_kfold_loss_0.0007.pt"
+    hidden_size=8
     data_file = "data/stainless_steel_304.xlsx"
     standardized_data_file = "data/stainless_steel_304_standardized.xlsx"
     standardization_values_file = "data/stainless_steel_304_standardization_values.xlsx"
@@ -75,8 +76,40 @@ if __name__ == "__main__":
 
     error_per_row = y_true - unstandardized_predictions.squeeze()
 
+    # Calculate absolute error per row
+    abs_error_per_row = torch.abs(error_per_row)
+
+    # Calculate mean absolute error
+    mean_abs_error = torch.mean(abs_error_per_row)
+
+    # Calculate standard deviation of absolute error
+    std_abs_error = torch.std(abs_error_per_row)
+
+    # Determine outliers based on quantiles
+    q1 = torch.quantile(abs_error_per_row, 0.25)
+    q3 = torch.quantile(abs_error_per_row, 0.75)
+    iqr = q3 - q1
+    lower_bound = q1 - 1.5 * iqr
+    upper_bound = q3 + 1.5 * iqr
+    outliers = ((abs_error_per_row < lower_bound) | (abs_error_per_row > upper_bound))
+
+    # Calculate number of outliers
+    num_outliers = torch.sum(outliers)
+
     # Save the results with additional columns for unstandardized predictions and error per row
     result_df = pd.read_excel(data_file)
     result_df["Unstandardized Prediction"] = unstandardized_predictions.numpy()
     result_df["Error per Row"] = error_per_row.numpy()
+    result_df["Absolute Error per Row"] = abs_error_per_row.numpy()
+
+    # Create a DataFrame for the summary statistics
+    summary_df = pd.DataFrame({
+        "Mean Absolute Error": [mean_abs_error.item()],
+        "Std Absolute Error": [std_abs_error.item()],
+        "Number of Outliers": [num_outliers.item()]
+    })
+
+    # Add the summary stats to the result DataFrame
+    result_df = pd.concat([result_df, summary_df], axis=1)
+
     result_df.to_excel("data/" + model_name_without_extension + "_" + data_file_without_extension + ".xlsx", index=False)
