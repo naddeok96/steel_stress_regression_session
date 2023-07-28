@@ -29,8 +29,8 @@ def unstandardize_predictions(predictions, mean_values, std_values):
 
 if __name__ == "__main__":
     # Set the path to your data files
-    model_name = "models/model_8.00_hidden_layers_kfold_loss_0.16.pt"
-    hidden_size=8
+    model_name = "models/model_16.00_hidden_layers_kfold_loss_0.0005.pt"
+    hidden_size=16
     data_file = "data/stainless_steel_304.xlsx"
     standardized_data_file = "data/stainless_steel_304_standardized.xlsx"
     standardization_values_file = "data/stainless_steel_304_standardization_values.xlsx"
