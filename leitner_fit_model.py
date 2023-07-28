@@ -14,22 +14,23 @@ def load_data(filepath):
     y = df.iloc[:, -1].values
     return X, y
 
-def leitner_train_model(model, train_data, max_updates, criterion, optimizer, device, fold=None):
+def leitner_train_model(model, train_data, max_updates, criterion, optimizer, device, fold=None, folds=None):
     model.train()
     dataloader = DataLoader(train_data, batch_size=64)
     
     ohem = LeitnerOHEM(model, criterion, dataloader, device)
-    loss_std_threshold = 0.01
+    mean_loss_threshold = 0.0005
+    loss_std_threshold = 0.005
     
     
     update_count = 0
 
     while update_count < max_updates:
-        std_all_losses = ohem.update_piles(dataloader)
+        mean_all_losses, std_all_losses = ohem.update_piles(dataloader)
         print("The std for all losses is: ", std_all_losses)
 
         # Check if std_all_losses is under the threshold
-        if std_all_losses < loss_std_threshold:
+        if mean_all_losses < mean_loss_threshold and std_all_losses < loss_std_threshold:
             break
 
         max_pile_3 = max(ohem.calculate_losses(ohem.piles[3]))
@@ -69,7 +70,7 @@ def leitner_train_model(model, train_data, max_updates, criterion, optimizer, de
                     if fold is None:
                         print(f'Final Train. Pile Update {inner_update_count+1} in pile {pile}. Number of data points in pile: {pile_size}. Maximum loss in current pile: {max(individual_losses)}. Max loss in pile 3: {max_pile_3}')
                     else:
-                        print(f'Fold: {fold}. Pile Update {inner_update_count+1} in pile {pile}. Number of data points in pile: {pile_size}. Maximum loss in current pile: {max(individual_losses)}. Max loss in pile 3: {max_pile_3}')
+                        print(f'Fold: {fold+1}/{folds}. Pile Update {inner_update_count+1} in pile {pile}. Number of data points in pile: {pile_size}. Maximum loss in current pile: {max(individual_losses)}. Max loss in pile 3: {max_pile_3}')
                 inner_update_count += 1
 
         # Take a gradient step on the whole dataset
@@ -122,7 +123,7 @@ def k_fold_validation(base_model, X, y, max_updates, criterion, optimizer, devic
         criterion = nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-        leitner_model = leitner_train_model(model, train_data, max_updates, criterion, optimizer, device, fold)
+        leitner_model = leitner_train_model(model, train_data, max_updates, criterion, optimizer, device, fold, k)
         loss = test_model(leitner_model, criterion, test_dataloader)
         losses.append(loss)
 
@@ -130,7 +131,7 @@ def k_fold_validation(base_model, X, y, max_updates, criterion, optimizer, devic
 
 if __name__ == "__main__":
     # Initialize GPU usage
-    gpu_number = "2"
+    gpu_number = "1"
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu_number
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
