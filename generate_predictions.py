@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import mean_squared_error
 from mlp import MLP
+import os
 
 # Load the standardized data
 def load_standardized_data(filename):
@@ -29,11 +30,14 @@ def unstandardize_predictions(predictions, mean_values, std_values):
 
 if __name__ == "__main__":
     # Set the path to your data files
-    model_name = "models/model_16.00_hidden_layers_kfold_loss_0.0005.pt"
+    model_name = "models/leitner_model_16_hidden_layers_kfold_loss_0_0064.pt"
     hidden_size=16
     data_file = "data/stainless_steel_304.xlsx"
     standardized_data_file = "data/stainless_steel_304_standardized.xlsx"
     standardization_values_file = "data/stainless_steel_304_standardization_values.xlsx"
+
+    model_name_without_extension = os.path.splitext(os.path.basename(model_name))[0]
+    data_file_without_extension = os.path.splitext(os.path.basename(data_file))[0]
 
     # Load the standardized data
     standardized_data = load_standardized_data(standardized_data_file)
@@ -72,7 +76,7 @@ if __name__ == "__main__":
     error_per_row = y_true - unstandardized_predictions.squeeze()
 
     # Save the results with additional columns for unstandardized predictions and error per row
-    result_df = pd.read_excel(data_file, index_col=0)
+    result_df = pd.read_excel(data_file)
     result_df["Unstandardized Prediction"] = unstandardized_predictions.numpy()
     result_df["Error per Row"] = error_per_row.numpy()
-    result_df.to_excel("data/stainless_steel_304_with_predictions.xlsx", index=False)
+    result_df.to_excel("data/" + model_name_without_extension + "_" + data_file_without_extension + ".xlsx", index=False)
