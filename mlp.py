@@ -28,7 +28,7 @@ if __name__ == "__main__":
         device = torch.device("cpu")
 
     # Instantiate the model and move it to the device
-    model = MLP(hidden_size=8).to(device)
+    model = MLP(hidden_size=16).to(device)
     
     # Print the model summary
     summary(model, input_size=(3,))
