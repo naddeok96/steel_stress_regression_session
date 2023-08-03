@@ -1,0 +1,24 @@
+Traceback (most recent call last):
+  File "fit_model.py", line 95, in <module>
+    train_model(model, full_dataloader, epochs, criterion, optimizer)
+  File "fit_model.py", line 20, in train_model
+    for batch, (X, y) in enumerate(dataloader):
+  File "/home/naddeok5/envs/steelyDANN/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 633, in __next__
+    data = self._next_data()
+  File "/home/naddeok5/envs/steelyDANN/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 677, in _next_data
+    data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+  File "/home/naddeok5/envs/steelyDANN/lib/python3.8/site-packages/torch/utils/data/_utils/fetch.py", line 51, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/home/naddeok5/envs/steelyDANN/lib/python3.8/site-packages/torch/utils/data/_utils/fetch.py", line 51, in <listcomp>
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+TypeError: 'DataLoader' object is not subscriptable
+Traceback (most recent call last):
+  File "fit_model.py", line 95, in <module>
+    train_model(model, full_data, epochs, criterion, optimizer)
+  File "fit_model.py", line 25, in train_model
+    loss.backward()
+  File "/home/naddeok5/envs/steelyDANN/lib/python3.8/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/home/naddeok5/envs/steelyDANN/lib/python3.8/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+KeyboardInterrupt
