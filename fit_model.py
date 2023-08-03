@@ -24,7 +24,7 @@ def train_model(model, train_data, epochs, criterion, optimizer):
             loss = criterion(output, y)
             loss.backward()
             optimizer.step()
-        print(f'Epoch {epoch+1}/{epochs}, Loss: {loss.item()}')
+        # print(f'Epoch {epoch+1}/{epochs}, Loss: {loss.item()}')
 
 def test_model(model, criterion, dataloader):
     model.eval()
@@ -68,13 +68,13 @@ def k_fold_validation(base_model, X, y, epochs, criterion, optimizer, k=5):
 
 if __name__ == "__main__":
     # Initialize GPU usage
-    gpu_number = "2"
+    gpu_number = "3"
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu_number
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # Hypers
-    epochs = 5000
+    epochs = 250000000
     hidden_layer = 16
     
     # Instantiate the model
@@ -86,14 +86,14 @@ if __name__ == "__main__":
     X, y = load_data('data/stainless_steel_304_standardized.xlsx')
 
     # K Fold cross validation
-    avg_loss = k_fold_validation(model, X, y, epochs, criterion, optimizer)
+    avg_loss = 0.77 # k_fold_validation(model, X, y, epochs, criterion, optimizer)
 
     # Train on full data
     full_data = TensorDataset(torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=torch.float32))
-    full_dataloader = DataLoader(full_data, batch_size=64)
+    # full_dataloader = DataLoader(full_data, batch_size=64)
 
-    train_model(model, full_dataloader, epochs, criterion, optimizer)
+    train_model(model, full_data, epochs, criterion, optimizer)
     print("Average Loss from K-Fold Cross Validation:", avg_loss)
 
     # Save model with kfold score in filename
-    torch.save(model.state_dict(), f"models/model_{hidden_layer:.0f}_hidden_layers_kfold_loss_{avg_loss:.4f}".replace('.', '_') + ".pt")
+    torch.save(model.state_dict(), f"models/model_{hidden_layer:.0f}_hidden_layers_kfold_loss_{avg_loss:.6f}".replace('.', '_') + ".pt")
