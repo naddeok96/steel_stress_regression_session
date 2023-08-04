@@ -1,0 +1,26 @@
+\begin{table}[h]
+\centering
+\begin{tabularx}{\columnwidth}{lXXXXX}
+\toprule
+Model & \rotatebox{315}{\makebox[0pt][r]{Average K-Fold MSE}} & \rotatebox{315}{\makebox[0pt][r]{Standard Deviation of K-Fold MSE}} & \rotatebox{315}{\makebox[0pt][r]{Test Loss (MSE)}} & \rotatebox{315}{\makebox[0pt][r]{Ratio (Avg K-Fold MSE / Test Loss)}} & \rotatebox{315}{\makebox[0pt][r]{Training Time (Seconds)}} \\
+\midrule
+Linear Regression & 0.0741 & 0.0167 & 0.0765 & 0.9689 & 2.0443 \\
+Boosted Decision Tree & 0.0007 & 0.0007 & \cellcolor{green!25}\textbf{0.0001} & \cellcolor{red!25}5.7360 & 0.1034 \\
+Leitner MLP (100 Epochs) & 0.0140 & 0.0028 & 0.0067 & 2.0858 & \cellcolor{red!25}280.3794 \\
+Rational Quadratic GPR & 0.0016 & 0.0013 & \cellcolor{yellow!25}0.0000 & \cellcolor{yellow!25}inf & 7.5000 \\
+MLP (100 Epochs) & 0.0318 & 0.0085 & 0.0261 & 1.2169 & 2.1011 \\
+MLP (5000 Epochs) & \cellcolor{green!25}\textbf{0.0004} & 0.0002 & 0.0002 & 2.2590 & 104.8494 \\
+Square Exponential GPR & 0.3550 & 0.3259 & \cellcolor{yellow!25}0.0000 & \cellcolor{yellow!25}inf & 2.9426 \\
+Linear Regression & 0.1115 & 0.0332 & 0.1366 & \cellcolor{green!25}\textbf{0.8159} & 3.6581 \\
+Quad SVM & \cellcolor{red!25}0.7268 & 0.0943 & \cellcolor{red!25}0.7009 & 1.0368 & 0.0128 \\
+Fine Regression Tree & 0.0004 & \cellcolor{green!25}\textbf{0.0001} & \cellcolor{yellow!25}0.0000 & \cellcolor{yellow!25}inf & 0.0023 \\
+Fine Gaussian SVM & 0.0072 & 0.0003 & 0.0064 & 1.1269 & 0.0042 \\
+Cubic SVM & 0.0841 & 0.0100 & 0.0824 & 1.0198 & 0.0132 \\
+Exponential GPR (Linear) & 0.0528 & 0.0232 & \cellcolor{yellow!25}0.0000 & \cellcolor{yellow!25}inf & 10.3439 \\
+Exponential GPR (Constant) & 0.7023 & \cellcolor{red!25}0.3855 & \cellcolor{yellow!25}0.0000 & \cellcolor{yellow!25}inf & 5.2675 \\
+Linear SVM & 0.0630 & 0.0096 & 0.0623 & 1.0107 & \cellcolor{green!25}\textbf{0.0006} \\
+\bottomrule
+\end{tabularx}
+\caption{Comparison of various regression models on the given dataset.}
+\label{tab:comparison}
+\end{table}
