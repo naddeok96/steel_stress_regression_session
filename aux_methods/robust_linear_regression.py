@@ -124,7 +124,7 @@ if __name__ == "__main__":
     results = {
         "Average K-Fold MSE": [avg_kfold_mse],
         "Standard Deviation of K-Fold MSE": [std_kfold_mse],
-        "Training Time": [training_time],
+        "Training Time (Seconds)": [training_time],
         "Test Loss (MSE)": [test_loss]
     }
     df_results = pd.DataFrame(results)
