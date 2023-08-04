@@ -23,8 +23,8 @@ class LeitnerOHEM:
         for pile in [1, 2, 3]:
             pile_indices = self.piles[pile]
             pile_losses = self.calculate_losses(pile_indices)
-            if len(pile_losses) > 0:
-                print(f'Pile {pile}: Mean loss = {np.mean(pile_losses)}, Std loss = {np.std(pile_losses)}')
+            # if len(pile_losses) > 0:
+                # print(f'Pile {pile}: Mean loss = {np.mean(pile_losses)}, Std loss = {np.std(pile_losses)}')
 
 
     def get_batch(self, pile_ratios):
