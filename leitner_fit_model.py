@@ -7,6 +7,7 @@ import pandas as pd
 from mlp import MLP  # Make sure mlp.py is in the same directory
 from leitner_mining import LeitnerOHEM
 import numpy as np
+from time import time
 
 def load_data(filepath):
     df = pd.read_excel(filepath)
@@ -14,7 +15,7 @@ def load_data(filepath):
     y = df.iloc[:, -1].values
     return X, y
 
-def leitner_train_model(model, train_data, max_updates, criterion, optimizer, device, fold=None, folds=None):
+def leitner_train_model(model, train_data, epochs, criterion, optimizer, device, fold=None, folds=None):
     model.train()
     dataloader = DataLoader(train_data, batch_size=64)
     
@@ -25,7 +26,7 @@ def leitner_train_model(model, train_data, max_updates, criterion, optimizer, de
     
     update_count = 0
 
-    while update_count < max_updates:
+    while update_count < epochs:
         mean_all_losses, std_all_losses = ohem.update_piles(dataloader)
         print("The mean/std for all losses is: ", mean_all_losses, "/", std_all_losses)
 
@@ -37,7 +38,7 @@ def leitner_train_model(model, train_data, max_updates, criterion, optimizer, de
         for pile in [2, 1]:  # start with pile 2
             inner_update_count = 0
             pile_size = len(ohem.piles[pile])
-            while pile_size > 0 and inner_update_count < max_updates:
+            while pile_size > 0 and inner_update_count < epochs:
                 indices = ohem.piles[pile]
                 np.random.shuffle(indices)
 
@@ -85,29 +86,32 @@ def leitner_train_model(model, train_data, max_updates, criterion, optimizer, de
         update_count += 1
 
         if fold is None:
-            print(f'Final Train. Update {update_count+1}/{max_updates}, Loss: {loss.item()}')
+            print(f'Final Train. Update {update_count+1}/{epochs}, Loss: {loss.item()}')
         else:
-            print(f'Fold: {fold+1}/{folds}. Update {update_count+1}/{max_updates}, Loss: {loss.item()}')
+            print(f'Fold: {fold+1}/{folds}. Update {update_count+1}/{epochs}, Loss: {loss.item()}')
 
     return model
 
 
-def test_model(model, criterion, dataloader):
+def test_model(model, criterion, data):
     model.eval()
     total_loss = 0
+    total_samples = 0
+    dataloader = DataLoader(data, batch_size=64)
     with torch.no_grad():
         for batch, (X, y) in enumerate(dataloader):
             X, y = X.to(device), y.unsqueeze(-1).to(device)
             output = model(X)
             loss = criterion(output, y)
-            total_loss += loss.item()
+            total_loss += loss.item() * len(X) # Multiply by the number of samples in the batch
+            total_samples += len(X) # Keep track of the total number of samples
             print("Test Loss ", total_loss)
             
-    avg_test_loss = total_loss / len(dataloader)
+    avg_test_loss = total_loss / total_samples # Divide by the total number of samples
     print(f'Avg Test Loss: {avg_test_loss}')
-    return total_loss / len(dataloader)
+    return avg_test_loss
 
-def k_fold_validation(base_model, X, y, max_updates, criterion, optimizer, device, k=5):
+def k_fold_validation(base_model, X, y, epochs, criterion, optimizer, device, k=5):
     kf = KFold(n_splits=k, shuffle=True)
     losses = []
     for fold, (train_index, test_index) in enumerate(kf.split(X)):
@@ -115,9 +119,7 @@ def k_fold_validation(base_model, X, y, max_updates, criterion, optimizer, devic
         y_train, y_test = y[train_index], y[test_index]
         
         train_data = TensorDataset(torch.tensor(X_train, dtype=torch.float32), torch.tensor(y_train, dtype=torch.float32))
-        
         test_data = TensorDataset(torch.tensor(X_test, dtype=torch.float32), torch.tensor(y_test, dtype=torch.float32))
-        test_dataloader = DataLoader(test_data, batch_size=64)
 
         model = type(base_model)(hidden_size=base_model.layers[2].in_features).to(device)  # create a new instance of the same model
         model.load_state_dict(base_model.state_dict())
@@ -125,21 +127,21 @@ def k_fold_validation(base_model, X, y, max_updates, criterion, optimizer, devic
         criterion = nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-        leitner_model = leitner_train_model(model, train_data, max_updates, criterion, optimizer, device, fold, k)
-        loss = test_model(leitner_model, criterion, test_dataloader)
+        leitner_model = leitner_train_model(model, train_data, epochs, criterion, optimizer, device, fold, k)
+        loss = test_model(leitner_model, criterion, test_data)
         losses.append(loss)
 
-    return sum(losses) / len(losses)
+    return np.mean(losses), np.std(losses)
 
 if __name__ == "__main__":
     # Initialize GPU usage
-    gpu_number = "0"
+    gpu_number = "1"
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu_number
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # Hypers
-    max_updates = 5000
+    epochs = 100
     hidden_layer = 16
     
     # Instantiate the model
@@ -151,13 +153,27 @@ if __name__ == "__main__":
     X, y = load_data('data/stainless_steel_304_standardized.xlsx')
 
     # K Fold cross validation
-    avg_loss = k_fold_validation(model, X, y, max_updates, criterion, optimizer, device)
+    avg_kfold_mse, std_kfold_mse = k_fold_validation(model, X, y, epochs, criterion, optimizer, device)
 
     # Train on full data
     full_data = TensorDataset(torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=torch.float32))
 
-    leitner_model = leitner_train_model(model, full_data, max_updates, criterion, optimizer, device)
-    print("Average Loss from K-Fold Cross Validation:", avg_loss)
+    start_time = time()
+    leitner_model = leitner_train_model(model, full_data, epochs, criterion, optimizer, device)
+    training_time = time() - start_time
+    print("Average Loss from K-Fold Cross Validation:", avg_kfold_mse)
+
+    test_loss = test_model(model, criterion, full_data)
+
+    results = {
+        "Average K-Fold MSE": [avg_kfold_mse],
+        "Standard Deviation of K-Fold MSE": [std_kfold_mse],
+        "Training Time (Seconds)": [training_time],
+        "Test Loss (MSE)": [test_loss]
+    }
+    df_results = pd.DataFrame(results)
+    df_results.to_excel(f"data/leitner_model_{hidden_layer:.0f}_hidden_layers_{epochs:.0f}_epochs_kfold_loss_{avg_kfold_mse:.6f}".replace('.', '_') + "_results.xlsx", index=False, float_format="%.6f")
+
 
     # Save model with kfold score in filename
-    torch.save(leitner_model.state_dict(), f"models/leitner_model_{hidden_layer:.0f}_hidden_layers_kfold_loss_{avg_loss:.4f}".replace('.', '_') + ".pt")
+    torch.save(leitner_model.state_dict(), f"models/leitner_model_{hidden_layer:.0f}_hidden_layers_{epochs:.0f}_epochs_kfold_loss_{avg_kfold_mse:.4f}".replace('.', '_') + ".pt")
