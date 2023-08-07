@@ -1,0 +1,25 @@
+\begin{table}[h]
+\centering
+\begin{tabularx}{\columnwidth}{lXXXXX}
+\toprule
+Model & \rotatebox{315}{\makebox[0pt][r]{Z-Score Outliers}} & \rotatebox{315}{\makebox[0pt][r]{Z-Score Outliers Contribution (\%)}} & \rotatebox{315}{\makebox[0pt][r]{Tukey's Fence Outliers}} & \rotatebox{315}{\makebox[0pt][r]{Tukey's Fence Outliers Contribution (\%)}} & \rotatebox{315}{\makebox[0pt][r]{Loss Difference}} \\
+\midrule
+Linear Regression & 16 & 19.07 & 42 & 40.06 & 0.5574 \\
+Cubic SVM & 14 & 24.82 & 65 & 63.38 & 1.159 \\
+Decision Tree Model & \cellcolor{yellow!25}0 & N/A & \cellcolor{yellow!25}0 & N/A & \cellcolor{yellow!25}0 \\
+MLP (5000 Epochs) & \cellcolor{green!25}\textbf{5} & 29.26 & 49 & 60.75 & 0.009203 \\
+Leitner MLP (5000 Epochs) & 12 & 18.95 & 47 & 45.28 & 0.001177 \\
+Boosted Decision Tree & 7 & 23.19 & 69 & 66.35 & 0.004464 \\
+Linear SVM & 13 & 15.64 & 57 & 49.11 & 0.5591 \\
+Square Exponential GPR & \cellcolor{yellow!25}0 & \cellcolor{yellow!25}0 & \cellcolor{yellow!25}0 & \cellcolor{yellow!25}0 & 3.303 \\
+Exponential GPR (Linear) & 13 & \cellcolor{green!25}\textbf{15.59} & 57 & 48.99 & 0.5588 \\
+Linear Regression & 14 & 18.64 & 45 & 41.13 & 1.049 \\
+Rational Quad Gpr Model & \cellcolor{green!25}\textbf{5} & \cellcolor{red!25}43.94 & \cellcolor{red!25}96 & \cellcolor{red!25}95.65 & \cellcolor{green!25}\textbf{2.66e-09} \\
+Exponential GPR (Constant) & 16 & 41.18 & 80 & 84.67 & 0.0006002 \\
+Quad SVM & \cellcolor{red!25}21 & 25.31 & 81 & 67.21 & \cellcolor{red!25}4.695 \\
+Gaussian Svm Model & 12 & 20.51 & \cellcolor{green!25}\textbf{21} & \cellcolor{green!25}\textbf{27.68} & 0.1074 \\
+\bottomrule
+\end{tabularx}
+\caption{Outliers Summary Table.}
+\label{tab:outliers_summary}
+\end{table}

@@ -1,0 +1,13 @@
+\begin{table}[h]
+\centering
+\begin{tabularx}{\columnwidth}{lXXXXX}
+\toprule
+Model & \rotatebox{315}{\makebox[0pt][r]{Z-Score Outliers}} & \rotatebox{315}{\makebox[0pt][r]{Z-Score Outliers Contribution (\%)}} & \rotatebox{315}{\makebox[0pt][r]{Tukey's Fence Outliers}} & \rotatebox{315}{\makebox[0pt][r]{Tukey's Fence Outliers Contribution (\%)}} & \rotatebox{315}{\makebox[0pt][r]{Loss Difference}} \\
+\midrule
+MLP (5000 Epochs) & \cellcolor{green!25}\textbf{5} & \cellcolor{red!25}29.26 & \cellcolor{red!25}49 & \cellcolor{red!25}60.75 & \cellcolor{red!25}0.009203 \\
+Leitner MLP (5000 Epochs) & \cellcolor{red!25}12 & \cellcolor{green!25}\textbf{18.95} & \cellcolor{green!25}\textbf{47} & \cellcolor{green!25}\textbf{45.28} & \cellcolor{green!25}\textbf{0.001177} \\
+\bottomrule
+\end{tabularx}
+\caption{Outliers Summary Table.}
+\label{tab:outliers_summary}
+\end{table}
