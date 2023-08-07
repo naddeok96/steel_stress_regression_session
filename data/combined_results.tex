@@ -1,0 +1,28 @@
+\begin{table}[h]
+\centering
+\begin{tabularx}{\columnwidth}{lXXXXX}
+\toprule
+Model & \rotatebox{315}{\makebox[0pt][r]{Average K-Fold MSE}} & \rotatebox{315}{\makebox[0pt][r]{Standard Deviation of K-Fold MSE}} & \rotatebox{315}{\makebox[0pt][r]{Test Loss (MSE)}} & \rotatebox{315}{\makebox[0pt][r]{Ratio (Avg K-Fold MSE / Test Loss)}} & \rotatebox{315}{\makebox[0pt][r]{Training Time (Seconds)}} \\
+\midrule
+Leitner MLP (100 Epochs) & 0.00983 & 0.00365 & 0.00417 & 2.3589 & 307.19 \\
+Linear Regression & 0.07412 & 0.01673 & 0.07650 & 0.96890 & 2.0443 \\
+Boosted Decision Tree & 0.00072 & 0.00067 & 0.00013 & \cellcolor{red!25}5.736 & 0.10335 \\
+Leitner MLP (100 Epochs) & 0.01400 & 0.00279 & 0.00671 & 2.0858 & 280.38 \\
+Rational Quadratic GPR & 0.00158 & 0.00134 & \cellcolor{yellow!25}0.00000 & \cellcolor{yellow!25}inf & 7.5 \\
+MLP (100 Epochs) & 0.03175 & 0.00850 & 0.02609 & 1.2169 & 2.1011 \\
+MLP (5000 Epochs) & 0.00038 & 0.00022 & 0.00017 & 2.259 & 104.85 \\
+Square Exponential GPR & 0.35502 & 0.32590 & \cellcolor{yellow!25}0.00000 & \cellcolor{yellow!25}inf & 2.9426 \\
+Linear Regression & 0.11146 & 0.03322 & 0.13661 & \cellcolor{green!25}\textbf{0.81587} & 3.6581 \\
+Quad SVM & \cellcolor{red!25}0.72675 & 0.09425 & \cellcolor{red!25}0.70094 & 1.0368 & 0.01276 \\
+Fine Regression Tree & 0.00038 & 0.00006 & \cellcolor{yellow!25}0.00000 & \cellcolor{yellow!25}inf & 0.00234 \\
+Fine Gaussian SVM & 0.00725 & 0.00031 & 0.00643 & 1.1269 & 0.00415 \\
+Leitner MLP (5000 Epochs) & \cellcolor{green!25}\textbf{0.00014} & \cellcolor{green!25}\textbf{0.00004} & \cellcolor{green!25}\textbf{0.00009} & 1.5111 & \cellcolor{red!25}10794 \\
+Cubic SVM & 0.08405 & 0.01003 & 0.08242 & 1.0198 & 0.01321 \\
+Exponential GPR (Linear) & 0.05278 & 0.02319 & \cellcolor{yellow!25}0.00000 & \cellcolor{yellow!25}inf & 10.344 \\
+Exponential GPR (Constant) & 0.70230 & \cellcolor{red!25}0.38551 & \cellcolor{yellow!25}0.00000 & \cellcolor{yellow!25}inf & 5.2675 \\
+Linear SVM & 0.06295 & 0.00962 & 0.06228 & 1.0107 & \cellcolor{green!25}\textbf{0.00061} \\
+\bottomrule
+\end{tabularx}
+\caption{Comparison of various regression models on the given dataset.}
+\label{tab:comparison}
+\end{table}

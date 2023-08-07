@@ -69,7 +69,11 @@ def format_latex(df):
         model_name = get_model_name(index)
         row_str = model_name
         for col, value in row.items():
-            cell_str = f'{value:.4f}'
+            if value > 1 and value != np.inf:
+                cell_str = f'{value:.5g}'
+            else:
+                cell_str = f'{value:.5f}'
+
             if value == min_values[col] and value != 0:
                 cell_str = '\\cellcolor{green!25}\\textbf{' + cell_str + '}'
             if value == max_values[col] and value < np.inf:
@@ -90,7 +94,7 @@ def format_latex(df):
 dfs = []
 
 # List of filenames to be skipped/ignored
-skip_files = ["models/model_16_hidden_layers_100_kfold_loss_0_031753.pt"]
+skip_files = ["models/model_16_hidden_layers_100_kfold_loss_0_031753.pt", "data/leitner_model_16_hidden_layers_100_epochs_kfold_loss_0_014002_results.xlsx"]
 
 # Iterate through all files in the "data/" directory
 for filename in os.listdir('data/'):
@@ -114,8 +118,8 @@ combined_results = combined_results[cols]
 latex_str = format_latex(combined_results)
 
 # Save the LaTeX string to a file
-with open('combined_results.tex', 'w') as f:
+with open('data/combined_results.tex', 'w') as f:
     f.write(latex_str)
 
 # Save the combined results to a new Excel file
-combined_results.to_excel("combined_results.xlsx", index=True, float_format="%.6f")
+combined_results.to_excel("data/combined_results.xlsx", index=True, float_format="%.7f")

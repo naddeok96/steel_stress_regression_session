@@ -7,6 +7,7 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler
 import time
+from joblib import dump
 
 def load_data(filepath):
     df = pd.read_excel(filepath)
@@ -88,3 +89,6 @@ if __name__ == "__main__":
     }
     df_results = pd.DataFrame(results)
     df_results.to_excel("data/exponential_gpr_linear_results.xlsx", index=False, float_format="%.6f")
+
+    # Save model
+    dump(model, 'models/expo_gpr_w_linear_basis_function_model.joblib')

@@ -7,6 +7,7 @@ import torch.optim as optim
 from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error
 import time
+from joblib import dump
 
 def load_data(filepath):
     df = pd.read_excel(filepath)
@@ -124,3 +125,6 @@ if __name__ == "__main__":
     }
     df_results = pd.DataFrame(results)
     df_results.to_excel("data/linear_regression_results.xlsx", index=False, float_format="%.6f")
+
+    # Save model
+    dump(model, 'models/linear_regression_model.joblib')
